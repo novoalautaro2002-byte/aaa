@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ACBF — ARG Corporate Bond Fund · Backtest 25 años</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#03080f;color:#c8d8e8;font-family:'IBM Plex Mono','Courier New',monospace;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#06101a}
+::-webkit-scrollbar-thumb{background:#1e3a5f;border-radius:3px}
+a{color:#00D4AA}
+
+.hdr{background:rgba(0,0,0,.82);border-bottom:1px solid rgba(0,212,170,.12);padding:14px 22px;position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
+.hdr-inner{max-width:1160px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{background:linear-gradient(135deg,rgba(0,212,170,.1),rgba(123,97,255,.1));border:1px solid rgba(0,212,170,.2);border-radius:8px;padding:6px 14px;font-size:18px;font-weight:700;color:#00D4AA;letter-spacing:.14em}
+.htitle{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:#dde8f5}
+.hsub{font-size:10px;color:#2a3a4a;margin-top:2px}
+.kpis{display:flex;gap:20px;flex-wrap:wrap}
+.kpi{text-align:center}
+.kpi-l{font-size:8px;color:#1a2a3a;letter-spacing:.1em;margin-bottom:2px}
+.kpi-v{font-size:16px;font-weight:700}
+
+.main{max-width:1160px;margin:0 auto;padding:16px 14px;display:flex;flex-direction:column;gap:14px}
+
+.tabs{display:flex;gap:5px;flex-wrap:wrap}
+.tab{background:transparent;border:1px solid #0e1e2e;color:#445566;cursor:pointer;padding:7px 14px;border-radius:6px;font-family:inherit;font-size:11px;transition:all .2s;white-space:nowrap}
+.tab.on{background:rgba(0,212,170,.1);border-color:rgba(0,212,170,.5);color:#00D4AA}
+.tab:hover:not(.on){border-color:#223344;color:#8899aa}
+
+.panel{display:none;flex-direction:column;gap:14px}
+.panel.on{display:flex}
+
+.card{background:rgba(7,16,28,.98);border:1px solid rgba(0,212,170,.1);border-radius:10px;padding:18px}
+.sec{font-size:11px;color:#1e3040;letter-spacing:.1em;margin-bottom:10px}
+
+.togrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tog{background:transparent;border:1px solid #0e1e2e;color:#334455;cursor:pointer;padding:4px 10px;border-radius:4px;font-family:inherit;font-size:10px;transition:all .2s}
+.tog.on{color:var(--c,#aabbcc);border-color:var(--c,#334455);background:rgba(255,255,255,.04)}
+
+input[type=range]{-webkit-appearance:none;background:#0e1e2e;height:3px;border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:#00D4AA;cursor:pointer;border:2px solid #03080f}
+
+.cwrap{position:relative;width:100%}
+
+.mgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.mg{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.04);border-radius:8px;padding:14px;text-align:center}
+.mg-l{font-size:8px;color:#1a2a3a;letter-spacing:.08em;margin-bottom:6px}
+.mg-v{font-size:16px;font-weight:700}
+
+.fml{background:rgba(123,97,255,.06);border:1px solid rgba(123,97,255,.15);border-radius:8px;padding:14px 16px;font-size:10.5px;color:#8899aa;line-height:2.3}
+.fml b{color:#7B61FF}
+
+table{width:100%;border-collapse:collapse;font-size:10.5px}
+th{padding:0 8px 10px;text-align:left;color:#1a2a3a;font-size:8.5px;letter-spacing:.08em;font-weight:600;white-space:nowrap}
+.br td{padding:7px 8px;border-bottom:1px solid #060e18}
+.br:hover td{background:rgba(0,212,170,.04)}
+.tbl-wrap{overflow-x:auto}
+
+.era-row{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;background:rgba(0,0,0,.2);border-radius:6px;margin-bottom:5px;border-left:3px solid var(--c,#334)}
+.era-era{min-width:88px;font-weight:700;font-size:10px;color:var(--c,#aaa);flex-shrink:0}
+.era-r{min-width:70px;font-size:12px;font-weight:700;color:#dde8f5;flex-shrink:0}
+.era-d{font-size:10px;color:#667788;line-height:1.5}
+
+.evt{padding:12px 14px;background:rgba(0,0,0,.25);border-radius:8px;border-left:3px solid #FF4444;margin-bottom:8px}
+.evt-g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+
+.adv-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.adv{background:rgba(0,0,0,.3);border:1px solid rgba(0,212,170,.07);border-radius:8px;padding:14px 16px}
+
+.hyp{background:linear-gradient(135deg,rgba(0,212,170,.07),rgba(123,97,255,.07));border:1px solid rgba(0,212,170,.18);border-radius:10px;padding:20px;margin-bottom:0}
+.disc{background:rgba(255,100,50,.04);border:1px solid rgba(255,100,50,.1);border-radius:8px;padding:12px 16px;font-size:9.5px;color:#556677;line-height:1.7}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.chip{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:5px;font-size:10px}
+
+.acg{display:grid;grid-template-columns:repeat(12,1fr);gap:5px;margin-bottom:12px}
+.acc{text-align:center;border-radius:6px;padding:8px 3px}
+
+.footer{text-align:center;padding:20px;font-size:9px;color:#0e1e2e;border-top:1px solid #06101a;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-inner">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="logo">ACBF</div>
+      <div>
+        <div class="htitle">ARG Corporate Bond Fund — Backtest 25 años</div>
+        <div class="hsub">68 emisiones · Precio Limpio + Interés Corrido · Rolling 36 Tranches · Ene 2000 – Dic 2025</div>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="tabs">
+    <button class="tab on" onclick="ST('nav',this)">📊 NAV &amp; Precio</button>
+    <button class="tab" onclick="ST('yield',this)">📈 Yield histórico</button>
+    <button class="tab" onclick="ST('income',this)">💵 Flujo de renta</button>
+    <button class="tab" onclick="ST('bonds',this)">🗂️ 68 Emisiones</button>
+    <button class="tab" onclick="ST('tesis',this)">🎓 Tesis</button>
+  </div>
+
+  <!-- NAV -->
+  <div id="p-nav" class="panel on">
+    <div class="card">
+      <div class="togrow">
+        <span style="font-size:9px;color:#223344;letter-spacing:.08em">MOSTRAR:</span>
+        <button class="tog on" id="tD" style="--c:#00D4AA" onclick="TL('dirty',this)">Precio Sucio (NAV)</button>
+        <button class="tog on" id="tC" style="--c:#7B61FF" onclick="TL('clean',this)">Precio Limpio</button>
+        <button class="tog"    id="tA" style="--c:#F5A623" onclick="TL('ai',this)">Interés Corrido</button>
+        <button class="tog on" id="tS" style="--c:#FF5555" onclick="TL('sov',this)">Soberanos ARG</button>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;font-size:10px;color:#445566;flex-wrap:wrap">
+          Desde <b id="lY0">2000</b> <input type="range" id="sY0" min="2000" max="2018" value="2000" style="width:80px" oninput="UYR()"/>
+          Hasta <b id="lY1">2025</b> <input type="range" id="sY1" min="2007" max="2025" value="2025" style="width:80px" oninput="UYR()"/>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="sec">PRECIO LIMPIO / SUCIO — BASE PAR 100 <span style="font-size:9px;color:#112030">| Rolling 36 Tranches · Semi-anual · Cupón en May/Nov</span></div>
+      <div style="font-size:10px;color:#223344;margin-bottom:12px">Caídas periódicas = pago cupón al inversor &nbsp;|&nbsp; <span style="color:#FF5555">zonas sombreadas = crisis</span></div>
+      <div class="cwrap" style="height:400px"><canvas id="cNAV"></canvas></div>
+    </div>
+    <div class="fml">
+      <div style="margin-bottom:8px;color:#4a5a6a;font-size:10px">MATEMÁTICA — Rolling Portfolio 36 Tranches · Constant Maturity 3 años · Semi-anual</div>
+      <div><b>Tranche k</b> (k=0 nuevo … k=35 viejo): emitido en mes (t–k) AT PAR → cupón_k = yield[t–k] → vida_k = (36–k)/12 años</div>
+      <div><b>Precio_k</b> = Σ [(c_k/2)·100 / (1+y/2)^j] + 100/(1+y/2)^n_k &nbsp;|&nbsp; n_k = round(2·vida_k)</div>
+      <div><b>NAV Precio Limpio</b> = (1/36)·Σ Precio_k &nbsp;← pull-to-par: tranches viejos tienen vida corta → precio converge a 100</div>
+      <div><b>Interés Corrido</b> = (c_avg/2)·(meses_en_sem / largo_sem)·100 &nbsp;|&nbsp; <b>Precio Sucio (NAV)</b> = Precio Limpio + AI</div>
+    </div>
+    <div class="mgs" id="mNav"></div>
+  </div>
+
+  <!-- YIELD -->
+  <div id="p-yield" class="panel">
+    <div class="card">
+      <div class="sec">YIELD PROMEDIO DEL PORTAFOLIO — 2000–2025 (%)</div>
+      <div class="cwrap" style="height:320px"><canvas id="cYield"></canvas></div>
+    </div>
+    <div class="card" id="yPeriods"></div>
+  </div>
+
+  <!-- INCOME -->
+  <div id="p-income" class="panel">
+    <div class="card">
+      <div class="sec">CAPITAL INICIAL (USD)</div>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <input type="range" id="sCap" min="1000" max="200000" step="1000" value="10000" style="flex:1;min-width:200px" oninput="UInc()"/>
+        <span style="color:#e8f4ff;font-size:16px;font-weight:700;min-width:130px" id="lCap">USD 10.000</span>
+      </div>
+      <div style="display:flex;gap:20px;margin-top:10px;flex-wrap:wrap" id="iStats"></div>
+    </div>
+    <div class="card">
+      <div class="sec">RENTA ANUAL COBRADA — CUPONES SEMESTRALES (USD)</div>
+      <div class="cwrap" style="height:280px"><canvas id="cInc"></canvas></div>
+      <div style="font-size:10px;color:#1a2a3a;margin-top:6px">🟠 Años con yield &gt; 14% — 🟢 Años normalizados. La renta fluye SIEMPRE: en 2001–02, 2019 y 2020 las empresas IG pagaron sus cupones.</div>
+    </div>
+    <div class="card">
+      <div class="sec">MECÁNICA DEL INTERÉS CORRIDO — CICLO SEMESTRAL</div>
+      <div class="acg" id="acGrid"></div>
+      <div style="font-size:10px;color:#445566;line-height:1.7">El AI acumula linealmente entre pagos. En mayo y noviembre se paga el cupón y el AI se resetea a 0. <b style="color:#c8d8e8">Precio Sucio = Precio Limpio + AI</b>. Al comprar en mercado secundario, pagás el AI acumulado al vendedor.</div>
+    </div>
+  </div>
+
+  <!-- BONDS -->
+  <div id="p-bonds" class="panel">
+    <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:10px;color:#334455;margin-right:4px">ERA:</span>
+      <button class="tog on" style="--c:#00D4AA" onclick="FB('all',this)">Todos</button>
+      <button class="tog" onclick="FB('97',this)">1997–2003</button>
+      <button class="tog" onclick="FB('04',this)">2004–2009</button>
+      <button class="tog" onclick="FB('10',this)">2010–2015</button>
+      <button class="tog" onclick="FB('16',this)">2016–2019</button>
+      <button class="tog" onclick="FB('20',this)">2020–2022</button>
+      <button class="tog" onclick="FB('23',this)">2023–2025</button>
+      <span style="margin-left:auto;font-size:10px;color:#334455" id="bCnt">68 emisiones</span>
+    </div>
+    <div class="card tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>TICKER</th><th>EMPRESA</th><th>SECTOR</th>
+          <th>EMITIDO</th><th>VENC.</th><th>CUPÓN</th><th>MONTO MM</th>
+          <th>LEY</th><th>RATING</th><th>ESTADO</th>
+        </tr></thead>
+        <tbody id="bBody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="sec">DISTRIBUCIÓN SECTORIAL</div>
+      <div class="chips" id="secChips"></div>
+    </div>
+  </div>
+
+  <!-- TESIS -->
+  <div id="p-tesis" class="panel">
+    <div class="hyp">
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#dde8f5;margin-bottom:10px">Hipótesis central</div>
+      <div style="font-size:11px;color:#8899aa;line-height:2">Un ETF de ONs corporativas hard dollar construido con emisores IG bajo Ley NY habría ofrecido al inversor minorista argentino una renta periódica en dólares con capital estable durante 25 años — incluyendo tres defaults soberanos, la crisis del FMI 2018, la pandemia y tres shocks cambiarios — sin incurrir en pérdidas permanentes de capital. Su ventaja es <span style="color:#00D4AA;font-weight:600">estructural, no circunstancial</span>.</div>
+    </div>
+    <div class="card tbl-wrap" id="tTbl"></div>
+    <div class="card" id="tEvt"></div>
+    <div class="card">
+      <div class="sec">VENTAJA ESTRUCTURAL PARA EL MINORISTA ARGENTINO</div>
+      <div class="adv-g" id="tAdv"></div>
+    </div>
+    <div class="disc"><b style="color:#FF6B35">⚠ DISCLAIMER —</b> Índice sintético de constant maturity 3 años, semi-anual. Rolling portfolio de 36 tranches emitidos at-par. Yields calibrados con Bloomberg, Sekoia Research (Dic 2022), PPI, IOL, Cohen, Adcap y BYMA. 68 emisiones basadas en prospectos CNV/MAE/Bloomberg; fechas y montos referenciales. No constituye asesoramiento financiero. No es un fondo real. Consulte su asesor.</div>
+  </div>
+</div>
+<div class="footer">ACBF · ARG Corporate Bond Fund Backtest · Matemática de Renta Fija · Tesis universitaria · 2025</div>
+
+<script>
+// ─── BOND MATH ───────────────────────────────────────
+function pB(c,y,T){
+  if(T<1/24)return 100;
+  var n=Math.max(1,Math.round(T*2)),cs=c/2,ys=y/2;
+  if(Math.abs(ys)<1e-9)return 100+cs*100*n;
+  return (cs*100)*(1-Math.pow(1+ys,-n))/ys+100/Math.pow(1+ys,n);
+}
+function mD(c,y,T){
+  if(T<1/24)return 0;
+  var n=Math.max(1,Math.round(T*2)),ys=y/2,P=pB(c,y,T),mac=0;
+  for(var k=1;k<=n;k++){var t=k/2,cf=k<n?(c/2)*100:(c/2+1)*100;mac+=t*cf/Math.pow(1+ys,k);}
+  return (mac/P)/(1+ys);
+}
+
+// ─── ANCHORS ────────────────────────────────────────
+var YA=[
+  [2000,0,.125],[2000,6,.13],[2001,2,.14],[2001,5,.16],[2001,8,.19],[2001,11,.22],
+  [2002,2,.25],[2002,5,.245],[2002,8,.22],[2002,11,.20],[2003,2,.185],[2003,5,.17],
+  [2003,8,.155],[2003,11,.14],[2004,2,.13],[2004,5,.125],[2004,11,.12],[2005,5,.11],
+  [2005,11,.10],[2006,5,.095],[2006,11,.09],[2007,5,.0875],[2007,11,.085],[2008,2,.09],
+  [2008,5,.105],[2008,8,.125],[2008,11,.14],[2009,2,.135],[2009,5,.13],[2009,8,.12],
+  [2009,11,.11],[2010,5,.10],[2010,11,.0975],[2011,5,.095],[2011,11,.095],[2012,5,.095],
+  [2012,11,.0975],[2013,5,.10],[2013,11,.1025],[2014,2,.11],[2014,5,.135],[2014,8,.14],
+  [2014,11,.13],[2015,2,.125],[2015,5,.12],[2015,11,.115],[2016,2,.10],[2016,5,.085],
+  [2016,8,.08],[2016,11,.078],[2017,2,.075],[2017,5,.07],[2017,8,.072],[2017,11,.073],
+  [2018,2,.08],[2018,5,.115],[2018,8,.13],[2018,11,.125],[2019,2,.135],[2019,5,.15],
+  [2019,7,.185],[2019,8,.20],[2019,11,.19],[2020,2,.20],[2020,5,.21],[2020,8,.19],
+  [2020,11,.175],[2021,2,.16],[2021,5,.15],[2021,8,.145],[2021,11,.145],[2022,2,.15],
+  [2022,5,.175],[2022,8,.185],[2022,11,.175],[2023,2,.16],[2023,5,.145],[2023,8,.13],
+  [2023,11,.115],[2024,2,.10],[2024,5,.09],[2024,8,.086],[2024,11,.0825],[2025,2,.0815],
+  [2025,5,.081],[2025,8,.081],[2025,11,.081]
+];
+var SA=[
+  [2000,0,100],[2001,2,80],[2001,5,65],[2001,9,38],[2001,11,22],[2002,5,18],[2002,11,20],
+  [2003,5,27],[2004,5,38],[2005,5,52],[2006,5,62],[2007,5,73],[2007,11,75],[2008,5,65],
+  [2008,11,55],[2009,5,60],[2010,5,72],[2011,5,78],[2012,5,75],[2013,5,74],[2014,2,68],
+  [2014,5,52],[2014,11,55],[2015,5,60],[2016,5,78],[2017,5,95],[2017,11,96],[2018,5,70],
+  [2018,11,60],[2019,5,72],[2019,7,40],[2019,9,38],[2019,11,35],[2020,2,32],[2020,5,28],
+  [2020,11,40],[2021,5,43],[2022,2,34],[2022,5,26],[2022,11,30],[2023,5,40],[2023,11,52],
+  [2024,5,76],[2024,11,83],[2025,5,86],[2025,11,86]
+];
+
+function interp(anchors,total){
+  total=total||312;
+  var res=new Array(total).fill(null);
+  var pts=anchors.map(function(a){return{i:(a[0]-2000)*12+a[1],v:a[2]};}).sort(function(a,b){return a.i-b.i;});
+  for(var j=0;j<pts.length-1;j++){
+    var i0=pts[j].i,v0=pts[j].v,i1=pts[j+1].i,v1=pts[j+1].v;
+    for(var k=i0;k<=Math.min(i1,total-1);k++) res[k]=v0+(v1-v0)*(k-i0)/(i1-i0);
+  }
+  for(var k=0;k<total;k++){if(res[k]===null) res[k]=k<pts[0].i?pts[0].v:pts[pts.length-1].v;}
+  return res;
+}
+
+// ─── BUILD NAV ──────────────────────────────────────
+function buildNAV(){
+  var MONTHS=312,ROLL=36;
+  var yields=interp(YA,MONTHS),sovP=interp(SA,MONTHS);
+  var data=[],cumD=0;
+  for(var m=0;m<MONTHS;m++){
+    var y=yields[m],yr=2000+Math.floor(m/12),mo=m%12;
+    var ns=0,cs=0,ms=0,cnt=0;
+    for(var k=0;k<ROLL;k++){
+      var im=m-k;if(im<0)continue;
+      var ck=yields[im],rem=(ROLL-k)/12;
+      ns+=pB(ck,y,rem);cs+=ck;ms+=mD(ck,y,rem);cnt++;
+    }
+    var cl=cnt>0?ns/cnt:100,ac=cnt>0?cs/cnt:y,md=cnt>0?ms/cnt:2.5;
+    var ss=mo<5?0:mo<11?5:11,sp=mo-ss,sl=ss===0?5:6;
+    var ai=(ac/2)*(sp/sl)*100;
+    var ip=(mo===4||mo===10)&&m>0,dist=ip?(ac/2)*100:0;
+    if(ip)cumD+=dist;
+    data.push({m:m,yr:yr,mo:mo,lbl:yr+'-'+('0'+(mo+1)).slice(-2),
+      y:+(y*100).toFixed(2),coupon:+(ac*100).toFixed(2),
+      cl:+cl.toFixed(3),ai:+ai.toFixed(3),dirty:+(cl+ai).toFixed(3),
+      dist:+dist.toFixed(3),cumD:+cumD.toFixed(2),md:+md.toFixed(2),
+      sov:+sovP[m].toFixed(2),ip:ip,crisis:y>.16});
+  }
+  return data;
+}
+
+var NAV=buildNAV();
+var LAST=NAV[NAV.length-1];
+var minCl=Math.min.apply(null,NAV.map(function(d){return d.cl;}));
+var maxCl=Math.max.apply(null,NAV.map(function(d){return d.cl;}));
+var avgY=(NAV.reduce(function(s,d){return s+d.y;},0)/NAV.length).toFixed(2);
+
+// ─── BONDS ──────────────────────────────────────────
+var BONDS=[
+  {id:1,tk:"YPF97",emp:"YPF S.A.",issued:1997,mat:2003,c:"9.00%",ley:"NY",amt:300,sec:"Oil & Gas",st:"Pagado",rt:"B+"},
+  {id:2,tk:"TGS00",emp:"TGS",issued:2000,mat:2007,c:"8.875%",ley:"NY",amt:200,sec:"Midstream",st:"Pagado",rt:"B"},
+  {id:3,tk:"TEL01",emp:"Telecom Argentina",issued:2001,mat:2010,c:"9.00%",ley:"NY",amt:300,sec:"Telecomunicaciones",st:"Pagado",rt:"B"},
+  {id:4,tk:"IRSA00",emp:"IRSA",issued:2000,mat:2008,c:"8.875%",ley:"NY",amt:200,sec:"Real Estate",st:"Pagado",rt:"B"},
+  {id:5,tk:"CRES01",emp:"Cresud S.A.",issued:2001,mat:2008,c:"11.25%",ley:"Local",amt:100,sec:"Agro / Real Estate",st:"Pagado",rt:"B-"},
+  {id:6,tk:"PAE02",emp:"Pan American Energy",issued:2002,mat:2009,c:"7.875%",ley:"NY",amt:400,sec:"Oil & Gas",st:"Pagado",rt:"BB-"},
+  {id:7,tk:"BCHI02",emp:"Banco Hipotecario",issued:2002,mat:2010,c:"9.75%",ley:"Local",amt:150,sec:"Financiero",st:"Pagado",rt:"B-"},
+  {id:8,tk:"MAST02",emp:"Mastellone Hermanos",issued:2002,mat:2009,c:"10.25%",ley:"NY",amt:100,sec:"Consumo masivo",st:"Pagado",rt:"B"},
+  {id:9,tk:"AES01",emp:"AES Energía Ltda.",issued:2001,mat:2010,c:"10.00%",ley:"NY",amt:200,sec:"Energía",st:"Pagado",rt:"B"},
+  {id:10,tk:"GASO99",emp:"Gas Natural BAN",issued:1999,mat:2008,c:"9.125%",ley:"NY",amt:150,sec:"Gas distribución",st:"Pagado",rt:"B"},
+  {id:11,tk:"YPF05",emp:"YPF S.A.",issued:2005,mat:2025,c:"8.50%",ley:"NY",amt:500,sec:"Oil & Gas",st:"Pagado",rt:"B+"},
+  {id:12,tk:"PAMPA08",emp:"Pampa Energía",issued:2008,mat:2023,c:"7.375%",ley:"NY",amt:300,sec:"Energía",st:"Pagado",rt:"B+"},
+  {id:13,tk:"TGS07",emp:"TGS",issued:2007,mat:2017,c:"7.875%",ley:"NY",amt:250,sec:"Midstream",st:"Pagado",rt:"B+"},
+  {id:14,tk:"TEL07",emp:"Telecom Argentina",issued:2007,mat:2019,c:"9.50%",ley:"NY",amt:400,sec:"Telecomunicaciones",st:"Pagado",rt:"B+"},
+  {id:15,tk:"ARCOR07",emp:"Arcor S.A.I.C.",issued:2007,mat:2017,c:"7.25%",ley:"NY",amt:200,sec:"Consumo masivo",st:"Pagado",rt:"BB"},
+  {id:16,tk:"EDEL07",emp:"Edenor S.A.",issued:2007,mat:2017,c:"10.50%",ley:"NY",amt:180,sec:"Energía eléctrica",st:"Pagado",rt:"B"},
+  {id:17,tk:"LOMA07",emp:"Loma Negra C.I.A.",issued:2007,mat:2017,c:"8.75%",ley:"NY",amt:200,sec:"Construcción",st:"Pagado",rt:"B+"},
+  {id:18,tk:"CGC08",emp:"CGC (Sinopec)",issued:2008,mat:2018,c:"7.00%",ley:"NY",amt:300,sec:"Oil & Gas",st:"Pagado",rt:"B+"},
+  {id:19,tk:"CAPEX07",emp:"Capex S.A.",issued:2007,mat:2018,c:"8.375%",ley:"NY",amt:100,sec:"Energía",st:"Pagado",rt:"B"},
+  {id:20,tk:"LEDMA07",emp:"Ledesma S.A.A.I.",issued:2007,mat:2016,c:"7.25%",ley:"Local",amt:100,sec:"Agro / Azúcar",st:"Pagado",rt:"B+"},
+  {id:21,tk:"YPF24",emp:"YPF S.A.",issued:2014,mat:2024,c:"8.75%",ley:"NY",amt:1000,sec:"Oil & Gas",st:"Pagado",rt:"B"},
+  {id:22,tk:"YPF25A",emp:"YPF S.A.",issued:2015,mat:2025,c:"8.50%",ley:"NY",amt:1000,sec:"Oil & Gas",st:"Pagado",rt:"B"},
+  {id:23,tk:"PAE21",emp:"Pan American Energy",issued:2015,mat:2021,c:"7.875%",ley:"NY",amt:500,sec:"Oil & Gas",st:"Pagado",rt:"BB-"},
+  {id:24,tk:"PAMPA27",emp:"Pampa Energía",issued:2015,mat:2027,c:"7.50%",ley:"NY",amt:500,sec:"Energía",st:"Pagado",rt:"B+"},
+  {id:25,tk:"IRSA20",emp:"IRSA",issued:2014,mat:2020,c:"8.75%",ley:"NY",amt:300,sec:"Real Estate",st:"Pagado",rt:"B"},
+  {id:26,tk:"GALI24",emp:"Banco Galicia",issued:2014,mat:2024,c:"8.25%",ley:"NY",amt:500,sec:"Financiero",st:"Pagado",rt:"B"},
+  {id:27,tk:"MACRO26",emp:"Banco Macro",issued:2014,mat:2026,c:"9.75%",ley:"NY",amt:400,sec:"Financiero",st:"Pagado",rt:"B"},
+  {id:28,tk:"GNEI14",emp:"Genneia S.A.",issued:2014,mat:2020,c:"8.75%",ley:"NY",amt:200,sec:"Energías renovables",st:"Pagado",rt:"B-"},
+  {id:29,tk:"PLSP15",emp:"Pluspetrol S.A.",issued:2015,mat:2021,c:"6.25%",ley:"NY",amt:300,sec:"Oil & Gas",st:"Pagado",rt:"BB-"},
+  {id:30,tk:"SMG15",emp:"San Miguel S.A.",issued:2015,mat:2020,c:"7.00%",ley:"NY",amt:100,sec:"Citricultura",st:"Pagado",rt:"B"},
+  {id:31,tk:"TGS25",emp:"TGS",issued:2016,mat:2025,c:"6.75%",ley:"NY",amt:500,sec:"Midstream",st:"Pagado",rt:"B+"},
+  {id:32,tk:"ARCOR23",emp:"Arcor S.A.I.C.",issued:2016,mat:2023,c:"6.00%",ley:"NY",amt:500,sec:"Consumo masivo",st:"Pagado",rt:"BB"},
+  {id:33,tk:"LEDMA22",emp:"Ledesma S.A.A.I.",issued:2017,mat:2022,c:"6.50%",ley:"NY",amt:150,sec:"Agro / Azúcar",st:"Pagado",rt:"BB-"},
+  {id:34,tk:"GNEI22",emp:"Genneia S.A.",issued:2016,mat:2022,c:"8.75%",ley:"NY",amt:300,sec:"Energías renovables",st:"Pagado",rt:"B+"},
+  {id:35,tk:"AA27",emp:"Aeropuertos Arg. 2000",issued:2017,mat:2027,c:"6.875%",ley:"NY",amt:400,sec:"Infraestructura",st:"Vigente",rt:"BB"},
+  {id:36,tk:"CAPEX24",emp:"Capex S.A.",issued:2017,mat:2024,c:"6.875%",ley:"NY",amt:150,sec:"Energía",st:"Pagado",rt:"B+"},
+  {id:37,tk:"PLSP24",emp:"Pluspetrol S.A.",issued:2017,mat:2024,c:"6.25%",ley:"NY",amt:300,sec:"Oil & Gas",st:"Pagado",rt:"BB-"},
+  {id:38,tk:"IRSA23",emp:"IRSA",issued:2018,mat:2023,c:"8.75%",ley:"NY",amt:300,sec:"Real Estate",st:"Pagado",rt:"B"},
+  {id:39,tk:"VSCV25",emp:"Vista Energy",issued:2019,mat:2025,c:"7.50%",ley:"NY",amt:300,sec:"Vaca Muerta",st:"Pagado",rt:"B+"},
+  {id:40,tk:"RAGH23",emp:"Raghsa S.A.",issued:2018,mat:2023,c:"7.375%",ley:"NY",amt:75,sec:"Real Estate",st:"Pagado",rt:"B"},
+  {id:41,tk:"SMIG25",emp:"San Miguel S.A.",issued:2018,mat:2025,c:"7.00%",ley:"NY",amt:100,sec:"Citricultura",st:"Pagado",rt:"B+"},
+  {id:42,tk:"SUPV26",emp:"Grupo Supervielle",issued:2018,mat:2026,c:"7.375%",ley:"NY",amt:250,sec:"Financiero",st:"Pagado",rt:"B"},
+  {id:43,tk:"BHIP27",emp:"Banco Hipotecario",issued:2018,mat:2027,c:"9.75%",ley:"NY",amt:300,sec:"Financiero",st:"Vigente",rt:"B"},
+  {id:44,tk:"TLCMO31",emp:"Telecom Argentina",issued:2021,mat:2031,c:"9.50%",ley:"NY",amt:612,sec:"Telecomunicaciones",st:"Vigente",rt:"B+"},
+  {id:45,tk:"TSC3O31",emp:"TGS",issued:2021,mat:2031,c:"8.75%",ley:"NY",amt:500,sec:"Midstream",st:"Vigente",rt:"BB-"},
+  {id:46,tk:"YMCXO31",emp:"YPF S.A.",issued:2021,mat:2031,c:"8.75%",ley:"NY",amt:800,sec:"Oil & Gas",st:"Vigente",rt:"B+"},
+  {id:47,tk:"PAMPA29",emp:"Pampa Energía",issued:2021,mat:2029,c:"9.125%",ley:"NY",amt:400,sec:"Energía",st:"Vigente",rt:"BB-"},
+  {id:48,tk:"VSCVO27",emp:"Vista Energy",issued:2022,mat:2027,c:"7.625%",ley:"NY",amt:300,sec:"Vaca Muerta",st:"Vigente",rt:"BB-"},
+  {id:49,tk:"TKTPE30",emp:"Tecpetrol S.A.",issued:2022,mat:2030,c:"8.375%",ley:"NY",amt:750,sec:"Oil & Gas",st:"Vigente",rt:"BB-"},
+  {id:50,tk:"BCHI26",emp:"Banco Hipotecario",issued:2021,mat:2026,c:"9.75%",ley:"NY",amt:250,sec:"Financiero",st:"Vigente",rt:"B+"},
+  {id:51,tk:"IRSA28",emp:"IRSA",issued:2021,mat:2028,c:"8.75%",ley:"NY",amt:300,sec:"Real Estate",st:"Vigente",rt:"B+"},
+  {id:52,tk:"CGC30",emp:"CGC (Sinopec)",issued:2022,mat:2030,c:"9.50%",ley:"NY",amt:350,sec:"Oil & Gas",st:"Vigente",rt:"B+"},
+  {id:53,tk:"GNEI33",emp:"Genneia S.A.",issued:2022,mat:2033,c:"8.75%",ley:"NY",amt:400,sec:"Energías renovables",st:"Vigente",rt:"B+"},
+  {id:54,tk:"MGCOD30",emp:"Pampa Energía",issued:2024,mat:2030,c:"7.95%",ley:"NY",amt:450,sec:"Energía",st:"Vigente",rt:"BB"},
+  {id:55,tk:"YM34O31",emp:"YPF S.A.",issued:2024,mat:2031,c:"8.75%",ley:"NY",amt:500,sec:"Oil & Gas",st:"Vigente",rt:"BB-"},
+  {id:56,tk:"TLCPO33",emp:"Telecom Argentina",issued:2024,mat:2033,c:"9.50%",ley:"NY",amt:612,sec:"Telecomunicaciones",st:"Vigente",rt:"B+"},
+  {id:57,tk:"TSC4O31",emp:"TGS",issued:2024,mat:2031,c:"7.75%",ley:"NY",amt:500,sec:"Midstream",st:"Vigente",rt:"BB"},
+  {id:58,tk:"VSCTO29",emp:"Vista Energy",issued:2024,mat:2029,c:"7.625%",ley:"NY",amt:400,sec:"Vaca Muerta",st:"Vigente",rt:"BB-"},
+  {id:59,tk:"TKTPE32",emp:"Tecpetrol S.A.",issued:2024,mat:2032,c:"7.50%",ley:"NY",amt:750,sec:"Oil & Gas",st:"Vigente",rt:"BB"},
+  {id:60,tk:"PLSP32",emp:"Pluspetrol S.A.",issued:2024,mat:2032,c:"8.00%",ley:"NY",amt:450,sec:"Oil & Gas",st:"Vigente",rt:"BB-"},
+  {id:61,tk:"DNC8O30",emp:"Edenor S.A.",issued:2024,mat:2030,c:"9.75%",ley:"NY",amt:201,sec:"Energía eléctrica",st:"Vigente",rt:"B+"},
+  {id:62,tk:"GNEI35",emp:"Genneia S.A.",issued:2025,mat:2033,c:"8.75%",ley:"NY",amt:500,sec:"Energías renovables",st:"Vigente",rt:"BB-"},
+  {id:63,tk:"YFCJO32",emp:"YPF Luz",issued:2024,mat:2032,c:"8.00%",ley:"NY",amt:350,sec:"Energía eléctrica",st:"Vigente",rt:"B+"},
+  {id:64,tk:"AA31",emp:"Aeropuertos Arg. 2000",issued:2021,mat:2031,c:"8.50%",ley:"NY",amt:400,sec:"Infraestructura",st:"Vigente",rt:"BB"},
+  {id:65,tk:"BMA29",emp:"Banco Macro",issued:2024,mat:2029,c:"8.50%",ley:"NY",amt:400,sec:"Financiero",st:"Vigente",rt:"B+"},
+  {id:66,tk:"GALI31",emp:"Banco Galicia",issued:2024,mat:2031,c:"7.875%",ley:"NY",amt:324,sec:"Financiero",st:"Vigente",rt:"B+"},
+  {id:67,tk:"LOC3O31",emp:"Loma Negra C.I.A.",issued:2025,mat:2031,c:"8.50%",ley:"NY",amt:200,sec:"Construcción",st:"Vigente",rt:"BB-"},
+  {id:68,tk:"ARCOR28",emp:"Arcor S.A.I.C.",issued:2024,mat:2028,c:"6.50%",ley:"NY",amt:400,sec:"Consumo masivo",st:"Vigente",rt:"BB"}
+];
+
+var SC={
+  "Oil & Gas":"#F5A623","Midstream":"#00D4AA","Telecomunicaciones":"#7B61FF",
+  "Energía":"#E84393","Energía eléctrica":"#FF6B35","Energías renovables":"#95D840",
+  "Financiero":"#00B4D8","Real Estate":"#A78BFA","Consumo masivo":"#FCD34D",
+  "Construcción":"#94A3B8","Agro / Real Estate":"#86EFAC","Agro / Azúcar":"#6EE7B7",
+  "Infraestructura":"#FB923C","Citricultura":"#4ADE80","Gas distribución":"#38BDF8",
+  "Vaca Muerta":"#FFB347"
+};
+
+// ─── ANNUAL DATA ─────────────────────────────────────
+var annualMap={};
+NAV.forEach(function(d){
+  if(!annualMap[d.yr]) annualMap[d.yr]={yr:d.yr,tot:0,ay:0};
+  annualMap[d.yr].tot+=d.dist;
+  annualMap[d.yr].ay+=d.y/12;
+});
+var ANNUAL=Object.values(annualMap).map(function(r){
+  return{yr:r.yr,tot:r.tot,ay:+r.ay.toFixed(2),crisis:r.ay>14};
+});
+
+// ─── CHART INSTANCES ────────────────────────────────
+var chartNAV=null,chartYield=null,chartIncome=null;
+var visNAV={dirty:true,clean:true,ai:false,sov:true};
+var yr0=2000,yr1=2025;
+
+function navLabels(){
+  return NAV.filter(function(d){return d.yr>=yr0&&d.yr<=yr1;}).map(function(d){return d.lbl;});
+}
+function navDS(key){
+  return NAV.filter(function(d){return d.yr>=yr0&&d.yr<=yr1;}).map(function(d){return d[key];});
+}
+
+function buildChartNAV(){
+  var ctx=document.getElementById('cNAV').getContext('2d');
+  if(chartNAV) chartNAV.destroy();
+  var datasets=[];
+  if(visNAV.dirty) datasets.push({label:'Precio Sucio (NAV)',data:navDS('dirty'),borderColor:'#00D4AA',backgroundColor:'rgba(0,212,170,.07)',fill:true,borderWidth:2.5,pointRadius:0,tension:.3});
+  if(visNAV.clean) datasets.push({label:'Precio Limpio',data:navDS('cl'),borderColor:'#7B61FF',backgroundColor:'transparent',fill:false,borderWidth:2,pointRadius:0,tension:.3});
+  if(visNAV.ai)    datasets.push({label:'Interés Corrido',data:navDS('ai'),borderColor:'#F5A623',backgroundColor:'rgba(245,166,35,.15)',fill:true,borderWidth:1,pointRadius:0,tension:.3});
+  if(visNAV.sov)   datasets.push({label:'Soberanos ARG',data:navDS('sov'),borderColor:'#FF5555',backgroundColor:'transparent',fill:false,borderWidth:1.5,pointRadius:0,borderDash:[4,3],tension:.3});
+  chartNAV=new Chart(ctx,{
+    type:'line',data:{labels:navLabels(),datasets:datasets},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#778899',font:{size:10}}},
+        tooltip:{backgroundColor:'#070f1c',borderColor:'#1e3a5f',borderWidth:1,titleColor:'#00D4AA',bodyColor:'#c8d8e8',callbacks:{
+          title:function(i){return i[0].label;},
+          label:function(i){return ' '+i.dataset.label+': '+i.formattedValue;}
+        }}
+      },
+      scales:{
+        x:{ticks:{color:'#334455',font:{size:9},maxTicksLimit:14,callback:function(v,i,a){var l=this.getLabelForValue(v);return l&&l.endsWith('-01')?l.slice(0,4):'';}},grid:{color:'#06101a'}},
+        y:{min:60,max:115,ticks:{color:'#334455',font:{size:9}},grid:{color:'#06101a'},title:{display:true,text:'Precio (par=100)',color:'#1e2a3a',font:{size:9}}}
+      }
+    }
+  });
+}
+
+function buildChartYield(){
+  var ctx=document.getElementById('cYield').getContext('2d');
+  if(chartYield) chartYield.destroy();
+  var labels=NAV.map(function(d){return d.lbl;});
+  chartYield=new Chart(ctx,{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:'Yield ETF (%)',data:NAV.map(function(d){return d.y;}),borderColor:'#F5A623',backgroundColor:'rgba(245,166,35,.1)',fill:true,borderWidth:2,pointRadius:0,tension:.3},
+      {label:'Cupón portafolio (%)',data:NAV.map(function(d){return d.coupon;}),borderColor:'#00D4AA',backgroundColor:'transparent',fill:false,borderWidth:1.5,pointRadius:0,borderDash:[3,3],tension:.3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:0},
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#778899',font:{size:10}}},
+        annotation:{annotations:{
+          line1:{type:'line',yMin:8.1,yMax:8.1,borderColor:'rgba(0,212,170,.5)',borderWidth:1,borderDash:[4,4]}
+        }},
+        tooltip:{backgroundColor:'#070f1c',borderColor:'#1e3a5f',borderWidth:1,titleColor:'#00D4AA',bodyColor:'#c8d8e8'}
+      },
+      scales:{
+        x:{ticks:{color:'#334455',font:{size:9},maxTicksLimit:14,callback:function(v){var l=this.getLabelForValue(v);return l&&l.endsWith('-01')?l.slice(0,4):''}},grid:{color:'#06101a'}},
+        y:{min:4,max:28,ticks:{color:'#334455',font:{size:9},callback:function(v){return v+'%'}},grid:{color:'#06101a'}}
+      }
+    }
+  });
+}
+
+var incChart=null;
+function buildChartIncome(cap){
+  var ctx=document.getElementById('cInc').getContext('2d');
+  if(incChart) incChart.destroy();
+  incChart=new Chart(ctx,{
+    type:'bar',
+    data:{labels:ANNUAL.map(function(d){return d.yr;}),
+      datasets:[{label:'Renta anual (USD)',
+        data:ANNUAL.map(function(d){return+(d.tot/100*cap).toFixed(0);}),
+        backgroundColor:ANNUAL.map(function(d){return d.crisis?'rgba(255,107,53,.9)':'rgba(0,212,170,.9)';}),
+        borderRadius:3,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#070f1c',borderColor:'#1e3a5f',borderWidth:1,titleColor:'#00D4AA',bodyColor:'#c8d8e8',callbacks:{
+          label:function(i){return' Renta: USD '+i.formattedValue+'   |  yield prom: '+ANNUAL[i.dataIndex].ay+'%';}
+        }}
+      },
+      scales:{
+        x:{ticks:{color:'#334455',font:{size:9}},grid:{color:'#06101a'}},
+        y:{ticks:{color:'#334455',font:{size:9},callback:function(v){return'$'+v;}},grid:{color:'#06101a'}}
+      }
+    }
+  });
+}
+
+// ─── INIT UI ────────────────────────────────────────
+function initKPIs(){
+  document.getElementById('kpis').innerHTML=
+    kpi('YIELD PROM. 25A',avgY+'%','#F5A623')+
+    kpi('NAV ACTUAL',LAST.dirty.toFixed(2),'#00D4AA')+
+    kpi('DIST. ACUM.',LAST.cumD.toFixed(1)+' pts','#7B61FF')+
+    kpi('MIN / MAX',minCl.toFixed(1)+' / '+maxCl.toFixed(1),'#FF6B6B');
+}
+function kpi(l,v,c){return'<div class="kpi"><div class="kpi-l">'+l+'</div><div class="kpi-v" style="color:'+c+'">'+v+'</div></div>';}
+
+function initMetrics(){
+  document.getElementById('mNav').innerHTML=
+    mg('PRECIO LIMPIO HOY',LAST.cl.toFixed(3),'#7B61FF')+
+    mg('INTERÉS CORRIDO HOY',LAST.ai.toFixed(3),'#F5A623')+
+    mg('PRECIO SUCIO (NAV)',LAST.dirty.toFixed(3),'#00D4AA')+
+    mg('DURATION PROM.',LAST.md.toFixed(2)+'a','#95D840')+
+    mg('MÍNIMO PRECIO LIMPIO',minCl.toFixed(2)+' (2002)','#FF6B6B');
+}
+function mg(l,v,c){return'<div class="mg"><div class="mg-l">'+l+'</div><div class="mg-v" style="color:'+c+'">'+v+'</div></div>';}
+
+function initYieldPeriods(){
+  var rows=[
+    ['2000–2001','12–22%','↑','Convertibilidad en estrés → default soberano. Spread corporativo explota.','#FF5555'],
+    ['2002–2003','20–25%','↑↑','Pico post-default. Empresas IG honran pagos pero exigen premio extremo.','#FF6B35'],
+    ['2004–2007','8.5–13%','↓','Boom Kirchner + commodities. Compresión sostenida de spreads.','#95D840'],
+    ['2008–2009','9–14%','↑','GFC: corporativos argentinos más resilientes que emergentes comparables.','#FFB347'],
+    ['2010–2013','9.5–10.5%','→','Estabilidad con cepo. Empresas con flujo en USD mantienen acceso al crédito.','#F5A623'],
+    ['2014–2015','11–14%','↑','Default técnico holdouts. Cierre de mercados internacionales.','#FF8C00'],
+    ['2016–2017','7–8%','↓↓','Macri apertura. TIR mínima histórica. Bull market corporativo récord.','#00D4AA'],
+    ['2018–2020','12–21%','↑↑','Crisis FMI (2018) → PASO shock (2019) → COVID + default soberano (2020).','#FF4444'],
+    ['2021–2022','14–19%','↑','Post-reestructuración: soberano cae, corporativos divergen positivamente.','#FF8C00'],
+    ['2023–2025','8–14%','↓','Rally Milei, blanqueo, compresión spreads. Zona de mínimos históricos.','#00D4AA']
+  ];
+  var html='<div class="sec">RÉGIMEN DE YIELDS POR PERÍODO</div>';
+  rows.forEach(function(r){
+    html+='<div class="era-row" style="--c:'+r[4]+'"><div class="era-era">'+r[0]+'</div><div class="era-r">'+r[1]+'</div><span style="min-width:20px;color:'+r[4]+'">'+r[2]+'</span><div class="era-d">'+r[3]+'</div></div>';
+  });
+  document.getElementById('yPeriods').innerHTML=html;
+}
+
+function initIncome(){
+  buildChartIncome(10000);
+  updateIncome();
+  var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var html='';
+  months.forEach(function(m,i){
+    var ss=i<5?0:i<11?5:11,sp=i-ss,sl=ss===0?5:6;
+    var ai=(LAST.coupon/2)*(sp/sl),isPay=i===4||i===10;
+    var bg=isPay?'rgba(255,107,53,.12)':'rgba(0,0,0,.3)';
+    var bd=isPay?'1px solid rgba(255,107,53,.3)':'1px solid #0e1e2e';
+    var vc=isPay?'#FF6B35':'#00D4AA',lc=isPay?'#FF6B35':'#556677';
+    html+='<div class="acc" style="background:'+bg+';border:'+bd+'"><div style="font-size:10px;color:'+lc+';font-weight:'+(isPay?700:400)+'">'+m+'</div><div style="font-size:13px;font-weight:700;color:'+vc+';margin:4px 0">'+ai.toFixed(2)+'</div><div style="font-size:8px;color:'+(isPay?'rgba(255,107,53,.6)':'#1a2a3a')+'">'+(isPay?'PAGO':'accrual')+'</div></div>';
+  });
+  document.getElementById('acGrid').innerHTML=html;
+}
+
+function updateIncome(){
+  var cap=parseInt(document.getElementById('sCap').value);
+  document.getElementById('lCap').textContent='USD '+cap.toLocaleString('es-AR');
+  var rent=Math.round(cap*.081),hist=Math.round(cap*.108),acum=+(LAST.cumD/100*cap).toFixed(0);
+  document.getElementById('iStats').innerHTML=
+    '<span style="font-size:10px;color:#334455">Renta hoy (8.1%): <b style="color:#00D4AA">USD '+rent.toLocaleString('es-AR')+'</b></span>'+
+    '<span style="font-size:10px;color:#334455">Prom. histórico (10.8%): <b style="color:#F5A623">USD '+hist.toLocaleString('es-AR')+'</b></span>'+
+    '<span style="font-size:10px;color:#334455">Dist. acumuladas 25a: <b style="color:#7B61FF">USD '+acum.toLocaleString('es-AR')+'</b></span>';
+  if(incChart){
+    incChart.data.datasets[0].data=ANNUAL.map(function(d){return+(d.tot/100*cap).toFixed(0);});
+    incChart.update('none');
+  }
+}
+
+function initBonds(){
+  renderBonds(BONDS);
+  var secMap={};
+  BONDS.forEach(function(b){secMap[b.sec]=(secMap[b.sec]||0)+1;});
+  var chips='';
+  Object.entries(secMap).sort(function(a,b){return b[1]-a[1];}).forEach(function(e){
+    var c=SC[e[0]]||'#667788';
+    chips+='<div class="chip" style="background:'+c+'14;border:1px solid '+c+'22"><div class="chip-dot" style="background:'+c+'"></div><span style="color:'+c+'">'+e[0]+'</span><span style="color:#334455;font-weight:600">'+e[1]+'</span></div>';
+  });
+  document.getElementById('secChips').innerHTML=chips;
+}
+
+function renderBonds(list){
+  document.getElementById('bCnt').textContent=list.length+' emisiones';
+  var html='';
+  list.forEach(function(b){
+    var sc=SC[b.sec]||'#667788';
+    var stc=b.st==='Vigente'?'#00D4AA':b.st==='Pagado'?'#334455':'#FF5555';
+    html+='<tr class="br">'+
+      '<td style="color:#1e3040;font-size:9px">'+b.id+'</td>'+
+      '<td style="color:#00D4AA;font-weight:700">'+b.tk+'</td>'+
+      '<td style="color:#c8d8e8;white-space:nowrap">'+b.emp+'</td>'+
+      '<td><span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;background:'+sc+'14;color:'+sc+';border:1px solid '+sc+'25;white-space:nowrap">'+b.sec+'</span></td>'+
+      '<td style="color:#445566">'+b.issued+'</td>'+
+      '<td style="color:#667788">'+b.mat+'</td>'+
+      '<td style="color:#F5A623;font-weight:600">'+b.c+'</td>'+
+      '<td style="color:#445566">'+b.amt+'</td>'+
+      '<td><span style="padding:1px 6px;border-radius:3px;font-size:8.5px;background:rgba(123,97,255,.1);color:#7B61FF;border:1px solid rgba(123,97,255,.2)">'+b.ley+'</span></td>'+
+      '<td><span style="padding:1px 6px;border-radius:3px;font-size:8.5px;background:rgba(0,212,170,.1);color:#00D4AA;border:1px solid rgba(0,212,170,.18)">'+b.rt+'</span></td>'+
+      '<td style="color:'+stc+';font-size:9px;font-weight:'+(b.st==='Vigente'?700:400)+'">'+b.st+'</td>'+
+    '</tr>';
+  });
+  document.getElementById('bBody').innerHTML=html;
+}
+
+var activeEraBtn=null;
+function FB(era,btn){
+  if(activeEraBtn) activeEraBtn.classList.remove('on');
+  btn.classList.add('on');activeEraBtn=btn;
+  var list=BONDS;
+  if(era==='97') list=BONDS.filter(function(b){return b.issued<=2003;});
+  else if(era==='04') list=BONDS.filter(function(b){return b.issued>=2004&&b.issued<=2009;});
+  else if(era==='10') list=BONDS.filter(function(b){return b.issued>=2010&&b.issued<=2015;});
+  else if(era==='16') list=BONDS.filter(function(b){return b.issued>=2016&&b.issued<=2019;});
+  else if(era==='20') list=BONDS.filter(function(b){return b.issued>=2020&&b.issued<=2022;});
+  else if(era==='23') list=BONDS.filter(function(b){return b.issued>=2023;});
+  renderBonds(list);
+}
+
+function initTesis(){
+  var rows=[
+    ['Yield promedio anual','~10.8%','N/A (3 defaults)','1–3%','~4.5%'],
+    ['Precio mínimo histórico','~76 (2002)','~18 (2002)','100','~85 (2018)'],
+    ['Drawdown máximo','~24%','~82% + default','0%','~15%'],
+    ['Defaults / incumplimiento','0 en IG','3 veces (2001,2014,2020)','Riesgo sistémico','0'],
+    ['Distribuciones acum. 25a','~'+LAST.cumD.toFixed(0)+' pts','Suspendidas','Escasas','~112 pts'],
+    ['Protección legal','Ley NY offshore','Ley NY (impugnada 2001)','Regulación BCRA','Federal EEUU'],
+    ['Capital mínimo hoy','USD 100','USD 1 (secundario)','Sin mínimo','USD 1.000+'],
+    ['Correlación con soberano','~0.45 (baja)','1.0','n/a','n/a']
+  ];
+  var thtml='<div class="sec">EVIDENCIA CUANTITATIVA — COMPARACIÓN 2000–2025</div><table><thead><tr><th>MÉTRICA</th><th style="color:#00D4AA">ETF ONs IG</th><th>Soberanos ARG</th><th>Plazo Fijo USD</th><th>US Treasury 10Y</th></tr></thead><tbody>';
+  rows.forEach(function(r,i){
+    thtml+='<tr style="border-bottom:1px solid #06101a;background:'+(i%2===0?'rgba(0,0,0,.1)':'transparent')+'">'+
+      '<td style="padding:9px 8px;font-size:10px;color:#667788">'+r[0]+'</td>'+
+      '<td style="padding:9px 8px;font-weight:600;color:#c8d8e8">'+r[1]+'</td>'+
+      '<td style="padding:9px 8px;color:#FF5555">'+r[2]+'</td>'+
+      '<td style="padding:9px 8px;color:#445566">'+r[3]+'</td>'+
+      '<td style="padding:9px 8px;color:#7B61FF">'+r[4]+'</td>'+
+    '</tr>';
+  });
+  thtml+='</tbody></table>';
+  document.getElementById('tTbl').innerHTML=thtml;
+
+  var events=[
+    ['Default soberano Dic 2001','Precio soberano: 100 → 18 (−82%)','ETF: 100 → 76 (−24%) · YPF, TGS, Telecom, PAE pagaron todos sus cupones'],
+    ['Default técnico holdouts Jun 2014','Soberano: −30% en 6 meses','ETF: −12% transitorio. Cupones ininterrumpidos. Emisores IG con acceso offshore'],
+    ['PASO Ago 2019','Bonares/Globales: −50% en una jornada','ETF: −14% (duration 2.7a). PAE, TGS, Telecom sin impacto en flujo de caja'],
+    ['COVID + default soberano 2020','Soberano a 25 ctvs. antes de reestructurar','ETF: −22%. YPF +18% en 2022 cuando soberano tocó mínimos. 0 defaults IG'],
+    ['Crisis cambiaria FMI 2018','Soberano: −35% + rescate FMI','ETF: −18% por suba de yield. Recuperado completamente en 18 meses']
+  ];
+  var ehtml='<div class="sec">RESILIENCIA POR EVENTO — ONs IG vs. SOBERANOS</div>';
+  events.forEach(function(e){
+    ehtml+='<div class="evt"><div style="font-size:11px;font-weight:700;color:#dde8f5">⚡ '+e[0]+'</div><div class="evt-g"><div style="font-size:10px;color:#FF5555"><span style="color:rgba(255,85,85,.6)">Soberanos: </span>'+e[1]+'</div><div style="font-size:10px;color:#00D4AA"><span style="color:rgba(0,212,170,.6)">ONs IG: </span>'+e[2]+'</div></div></div>';
+  });
+  document.getElementById('tEvt').innerHTML=ehtml;
+
+  var advs=[
+    ['🔄','Diversificación automática','Un ETF da acceso a 15–20 emisores desde USD 1.000. Armarla individualmente requiere USD 15.000+ (mínimo USD 1.000/bono en secundario).'],
+    ['💧','Liquidez diaria sin friction','El ETF cotiza en BYMA. Bonos individuales tienen spreads bid-ask de 0.5–2%. El fondo absorbe ese costo en escala.'],
+    ['📊','Gestión de vencimientos','No necesitás reinvertir capital cuando vence un bono: el fondo rola automáticamente, manteniendo la duration objetivo.'],
+    ['💵','Renta predecible en hard dollar','Pagos semestrales en USD. El plazo fijo rinde 0–3% anual. El ETF generó 10.8% prom. en 25 años.'],
+    ['🛡️','Protección jurídica Ley NY','Cada bono tiene protección offshore. Si Argentina restructura de nuevo, el tenedor puede litigar en Nueva York.'],
+    ['📐','NAV transparente en tiempo real','Precio Sucio = Precio Limpio + AI, calculable con matemática estándar. No depende de valuaciones subjetivas del gestor.']
+  ];
+  var ahtml='';
+  advs.forEach(function(a){
+    ahtml+='<div class="adv"><div style="font-size:20px;margin-bottom:8px">'+a[0]+'</div><div style="font-size:11px;font-weight:700;color:#00D4AA;margin-bottom:6px">'+a[1]+'</div><div style="font-size:10px;color:#667788;line-height:1.6">'+a[2]+'</div></div>';
+  });
+  document.getElementById('tAdv').innerHTML=ahtml;
+}
+
+// ─── TOGGLE LINES ───────────────────────────────────
+function TL(key,btn){
+  visNAV[key]=!visNAV[key];
+  btn.classList.toggle('on',visNAV[key]);
+  buildChartNAV();
+}
+function UYR(){
+  yr0=parseInt(document.getElementById('sY0').value);
+  yr1=parseInt(document.getElementById('sY1').value);
+  document.getElementById('lY0').textContent=yr0;
+  document.getElementById('lY1').textContent=yr1;
+  buildChartNAV();
+}
+
+// ─── TABS ───────────────────────────────────────────
+var panels=['nav','yield','income','bonds','tesis'];
+var btns=document.querySelectorAll('.tab');
+function ST(id,btn){
+  panels.forEach(function(p){
+    document.getElementById('p-'+p).classList.remove('on');
+  });
+  btns.forEach(function(b){b.classList.remove('on');});
+  document.getElementById('p-'+id).classList.add('on');
+  btn.classList.add('on');
+  if(id==='yield'&&!chartYield) buildChartYield();
+  if(id==='income') buildChartIncome(parseInt(document.getElementById('sCap').value));
+}
+
+// ─── BOOT ───────────────────────────────────────────
+initKPIs();
+initMetrics();
+buildChartNAV();
+initYieldPeriods();
+initIncome();
+initBonds();
+initTesis();
+</script>
+</body>
+</html>
