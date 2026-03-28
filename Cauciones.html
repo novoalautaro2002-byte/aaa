@@ -1,0 +1,11 @@
+<div class="page" id="page-cauc">
+<div class="shell">
+  <div class="left-panel">
+    <div class="panel-hdr"><span class="p-cmd">CAUC — Cauciones Bursátiles</span><span class="p-desc">Mercado Argentino · ARS</span></div>
+    <div class="mode-tabs">
+      <button class="mode-tab on-col" id="c-tab-col" onclick="cSetMode('colocadora')">▲ COLOCADORA</button>
+      <button class="mode-tab" id="c-tab-tom" onclick="cSetMode('tomadora')">▼ TOMADORA</button>
+    </div>
+    <div class="sec">PARÁMETROS DE OPERACIÓN</div>
+    <div class="fields">
+      <div class="fr"><div class="fl2">Capital nominal</div><div class="fv"><input class="pi" type="number" id="c-capital" placeholder="0" oninput="cCalc()" min="0" step="1000" style="width:150px"><span class="fu">ARS</span></div></div>

@@ -1,0 +1,30 @@
+<div class="page" id="page-arb">
+<div class="arb-outer">
+
+  <!-- Top control bar -->
+  <div class="arb-topbar">
+    <div class="arb-live-dot loading" id="arb-dot"></div>
+    <span id="arb-status">CONECTANDO...</span>
+    <span class="arb-title-tag">ARBITRAJE GD30 / AL30 · BOLLINGER BANDS</span>
+    <div style="flex:1"></div>
+    <button class="arb-btn" id="arb-save-btn" onclick="arbSaveToday()">⊕ REGISTRAR HOY</button>
+    <button class="arb-btn blue" onclick="arbFetch()" style="margin-left:6px">↻ ACTUALIZAR</button>
+    <button class="arb-btn red" onclick="arbClearHistory()" style="margin-left:6px;font-size:8px">✕ RESET</button>
+  </div>
+
+  <!-- Main 4-column grid -->
+  <div class="arb-grid">
+
+    <!-- LEFT: Historical table -->
+    <div class="arb-left">
+      <div class="arb-pnl-hdr">
+        <span class="arb-pnl-title">Historial</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--gray)" id="arb-hist-count">—</span>
+      </div>
+      <div class="arb-hist-wrap">
+        <table class="arb-hist-tbl">
+          <thead><tr><th>Fecha</th><th>Ratio</th></tr></thead>
+          <tbody id="arb-hist-tbody"></tbody>
+        </table>
+      </div>
+    </div>
