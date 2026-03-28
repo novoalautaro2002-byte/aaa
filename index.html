@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Web</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="resumen"></div>
+  <div id="cauciones"></div>
+  <div id="descuento"></div>
+  <div id="lecap"></div>
+  <div id="bonos"></div>
+  <div id="arbitraje"></div>
+
+  <script>
+    async function loadComponent(id, file) {
+      try {
+        const response = await fetch(file);
+        if (!response.ok) {
+          throw new Error(`No se pudo cargar ${file}`);
+        }
+        const content = await response.text();
+        document.getElementById(id).innerHTML = content;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    loadComponent("resumen", "Resumen.html");
+    loadComponent("cauciones", "Cauciones.html");
+    loadComponent("descuento", "Descuento.html");
+    loadComponent("lecap", "Lecap.html");
+    loadComponent("bonos", "Bonos.html");
+    loadComponent("arbitraje", "Arbitraje.html");
+  </script>
+</body>
+</html>
